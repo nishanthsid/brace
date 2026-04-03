@@ -1,2 +1,3 @@
-from brace.urls.storage import UrlStorage
-from brace.urls.utils import *
+from .storage import *
+from .utils import *
+from .method_urls import *

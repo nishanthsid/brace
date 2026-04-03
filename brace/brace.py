@@ -1,42 +1,38 @@
 from brace.response import *
 from werkzeug.wrappers import Request, Response
 import json
-from brace.urls import UrlStorage
+from brace.urls import MethodUrls, HttpMethod, EndpointQueryResult
 
 class Brace:
     def __init__(self):
-        self.endpoints = {
-            "GET":{},
-            "POST":{}
-        }
-        self.url_storage = UrlStorage()
+        self.__url_aggregator = MethodUrls()
     
     def get(self, endpoint : str):
         def wrapper(func):
-            if "<" in endpoint and ">" in endpoint:
-                self.url_storage.insert(endpoint, func)
-            else:
-                self.endpoints["GET"][endpoint] = func
+            self.__url_aggregator.insert_endpoint(HttpMethod.GET, endpoint, func)
             return func
         return wrapper
     
-    def handle_get_response(self, req, environ, start_response):
-        path = req.path
-        func = self.endpoints["GET"].get(path, None)
-        path_vars = {}
-        if func == None:
-            succ, path_vars, func = self.url_storage.search(path)
-            if succ == False:
-                func = None
-        if func is None:
-            resp = Response(
-                "<h1> Not Found </h1>",
-                content_type = "text/html",
-                status = 404
-            )
-            return resp(environ, start_response)
-        
-        status, method_resp = func(req, **path_vars)
+    def post(self, endpoint : str):
+        def wrapper(func):
+            self.__url_aggregator.insert_endpoint(HttpMethod.POST, endpoint, func)
+            return func
+        return wrapper
+    
+    def put(self, endpoint : str):
+        def wrapper(func):
+            self.__url_aggregator.insert_endpoint(HttpMethod.PUT, endpoint, func)
+            return func
+        return wrapper
+    
+    def delete(self, endpoint : str):
+        def wrapper(func):
+            self.__url_aggregator.insert_endpoint(HttpMethod.DELETE, endpoint, func)
+            return func
+        return wrapper
+    
+    @staticmethod
+    def response_sender(status, method_resp, environ, start_response):
         if isinstance(method_resp, BaseResponse) == False:
             resp = Response(
                 method_resp,
@@ -69,11 +65,24 @@ class Brace:
 
         return resp(environ, start_response)
 
+    def handle_request(self, req, environ, start_response):
+        result = self.__url_aggregator.get_handler(HttpMethod[req.method], req.path)
+        if result.handler is None:
+            resp = Response(
+                "<h1> Not Found </h1>",
+                content_type = "text/html",
+                status = 404
+            )
+            return resp(environ, start_response)
+        status, method_resp = result.handler(req, **result.path_vars)
+
+        return Brace.response_sender(status, method_resp, environ, start_response)
+
     def __call__(self, environ, start_response):
         req = Request(environ)
     
-        if req.method == "GET":
-            return self.handle_get_response(req, environ, start_response)
+        if HttpMethod.__members__.get(req.method) is not None:
+            return self.handle_request(req, environ, start_response)
         
         resp = Response(
             "<h1> Method not allowed </h1>",

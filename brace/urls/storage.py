@@ -76,6 +76,7 @@ class UrlStorage:
         curr = self.root
         path_dict = {}
         res = True
+        handler = None
         for i in split:
             node = curr.children.get(i, False)
             if node == False:
@@ -97,7 +98,7 @@ class UrlStorage:
                     dict_val = i
                 path_dict[node.val_or_re] = dict_val
             curr = node
-        handler = None
+        
         if res:
             handler = curr.handler
         return res, path_dict, handler

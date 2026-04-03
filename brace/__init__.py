@@ -1,1 +1,1 @@
-from brace.brace import Brace
+from .brace import Brace
