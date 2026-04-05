@@ -15,6 +15,7 @@ class EndpointValidator(Enum):
     LOOK_COLON = auto()
     LOOK_LT = auto()
 
+    @staticmethod
     def is_param(endpoint : str):
         context = EndpointValidator.LOOK_GT
         for i in endpoint:
@@ -41,8 +42,8 @@ class EndpointValidator(Enum):
         return False
 
 class EndpointQueryResult:
-    def __init__(self, succ = False, path_vars = None, handler = None):
-        self.succ = succ
+    def __init__(self, success = False, path_vars = None, handler = None):
+        self.success = success
         self.path_vars = {} if path_vars is None else path_vars
         self.handler = handler
 
@@ -63,13 +64,13 @@ class EndpointAggregator:
         ret = EndpointQueryResult()
         match1 = self.__plain_endpoints.get(endpoint, None)
         if match1 is not None:
-            ret.succ = True
+            ret.success = True
             ret.handler = match1
             return ret
         
         #second try O(n) Trie search
-        succ, path_vars, handler = self.__param_endpoints.search(endpoint)
-        ret.succ = succ
+        success, path_vars, handler = self.__param_endpoints.search(endpoint)
+        ret.success = success
         ret.path_vars = path_vars
         ret.handler = handler
 

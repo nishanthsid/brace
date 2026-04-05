@@ -7,16 +7,20 @@ class ResponseType(Enum):
     XML = auto()
 
 class BaseResponse:
-    def __init__(self, resp_obj):
-        self.obj = resp_obj
+    def __init__(self, resp_obj, status_code):
+        self.__obj = resp_obj
+        self.__status_code = status_code
     
     def get_obj(self):
-        return self.obj
+        return self.__obj
+
+    def get_status_code(self):
+        return self.__status_code
     
     def get_resp_type(self):
         raise NotImplementedError("Child classes must implement this method")
 
-class JsonRespone(BaseResponse):
+class JsonResponse(BaseResponse):
     def get_resp_type(self):
         return ResponseType.JSON
 

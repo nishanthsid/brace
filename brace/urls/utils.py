@@ -22,7 +22,7 @@ TYPE_REGEX = {
     NodeType.BOOLEAN: re.compile(r'^(true|false)$'),
     NodeType.INTEGER: re.compile(r'^-?(0|[1-9][0-9]*)$'),
     NodeType.REAL: re.compile(r'^-?(?:[0-9]+\.[0-9]+|[0-9]+\.|\.[0-9]+)(?:[eE][+-]?[0-9]+)?$'),
-    NodeType.STRING: re.compile(r'^(?!-?\d+(\.\d+)?([eE][+-]?\d+)?$)[^\s]+$'),
+    NodeType.STRING: re.compile(r'^(?!-?\d+(\.\d+)?([eE][+-]?\d+)?$)\S+$'),
 }
 
 class Node:

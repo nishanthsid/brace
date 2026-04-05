@@ -28,11 +28,11 @@ def test_case(desc, method, path, expect_success):
     res = routes.get_handler(method, path)
     print(f"\n[TEST] {desc}")
     print("Path:", path)
-    print("Success:", res.succ)
+    print("Success:", res.success)
     print("Handler:", res.handler)
     print("Vars:", res.path_vars)
 
-    if res.succ != expect_success:
+    if res.success != expect_success:
         print("❌ FAILED")
     else:
         print("✅ PASSED")
@@ -99,7 +99,7 @@ for i in range(100):
 
 for i in range(100):
     res = routes.get_handler(HttpMethod.GET, f"/bulk/{i}")
-    if not res.succ:
+    if not res.success:
         print("❌ Bulk test failed at", i)
 
 print("\n🔥 TESTING COMPLETE")

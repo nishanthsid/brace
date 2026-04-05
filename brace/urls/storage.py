@@ -62,7 +62,7 @@ class UrlStorage:
             
             val = curr.children.get(key, False)
             curr.leaf = False
-            if val == False:
+            if not val:
                 curr.children[key] = node
                 curr = node
             else:
@@ -79,13 +79,13 @@ class UrlStorage:
         handler = None
         for i in split:
             node = curr.children.get(i, False)
-            if node == False:
+            if not node:
                 possible = UrlStorage.detect_node_type(i)
                 if possible is None:
                     res = False
                     break
                 node = curr.children.get(possible, False)
-                if node == False:
+                if not node:
                     res = False
                     break
                 if possible == NodeType.INTEGER:

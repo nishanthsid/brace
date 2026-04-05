@@ -2,10 +2,26 @@ from brace.response import *
 from werkzeug.wrappers import Request, Response
 import json
 from brace.urls import MethodUrls, HttpMethod
+from brace.middlewares import MiddleWarePipeline
 
 class Brace:
     def __init__(self):
         self.__url_aggregator = MethodUrls()
+        self.__pre_req = MiddleWarePipeline(short_circuit_class=BaseResponse)
+        self.__post_req = MiddleWarePipeline(short_circuit_class=BaseResponse)
+
+
+    def pre_request(self):
+        def wrapper(func):
+            self.__pre_req.append_handler(func)
+            return func
+        return wrapper
+
+    def post_request(self):
+        def wrapper(func):
+            self.__post_req.append_handler(func)
+            return func
+        return wrapper
     
     def get(self, endpoint : str):
         def wrapper(func):
@@ -32,26 +48,24 @@ class Brace:
         return wrapper
     
     @staticmethod
-    def response_sender(status, method_resp, environ, start_response):
-        if isinstance(method_resp, BaseResponse) == False:
+    def response_sender(method_resp, environ, start_response):
+        if not isinstance(method_resp, BaseResponse):
             resp = Response(
                 method_resp,
                 content_type = "text/plain",
-                status = status
+                status = method_resp.get_status_code()
             )
             return resp(environ, start_response)
-        
-        content_type = ""
         response_body = method_resp.get_obj()
 
-        type = method_resp.get_resp_type()
+        resp_type = method_resp.get_resp_type()
 
-        if type == ResponseType.JSON:
+        if resp_type == ResponseType.JSON:
             response_body = json.dumps(response_body)
             content_type = "application/json"
-        elif type == ResponseType.XML:
+        elif resp_type == ResponseType.XML:
             content_type = "text/xml"
-        elif type == ResponseType.TEXT:
+        elif resp_type == ResponseType.TEXT:
             content_type = "text/plain"
         else:
             content_type = "text/html"
@@ -60,7 +74,7 @@ class Brace:
         resp = Response(
             response_body,
             content_type = content_type,
-            status = status
+            status = method_resp.get_status_code()
         )
 
         return resp(environ, start_response)
@@ -74,9 +88,15 @@ class Brace:
                 status = 404
             )
             return resp(environ, start_response)
-        status, method_resp = result.handler(req, **result.path_vars)
+        pre_response = self.__pre_req.start(req)
+        if not isinstance(pre_response, BaseResponse):
+            method_resp = result.handler(req, **result.path_vars)
+            post_response = self.__post_req.start((req, method_resp))
+        else:
+            post_response = self.__post_req.start((req, pre_response))
 
-        return Brace.response_sender(status, method_resp, environ, start_response)
+        _, post_response = post_response
+        return Brace.response_sender(post_response, environ, start_response)
 
     def __call__(self, environ, start_response):
         req = Request(environ)
