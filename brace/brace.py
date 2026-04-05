@@ -1,7 +1,7 @@
 from brace.response import *
 from werkzeug.wrappers import Request, Response
 import json
-from brace.urls import MethodUrls, HttpMethod, EndpointQueryResult
+from brace.urls import MethodUrls, HttpMethod
 
 class Brace:
     def __init__(self):
