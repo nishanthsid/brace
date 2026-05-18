@@ -2,10 +2,15 @@ from brace import Brace
 from brace.response import JsonResponse, PlainTextResponse, ResponseType
 import time
 import uuid
+import threading
 
 app = Brace()
 
 RATE_LIMIT = {}
+_RATE_LIMIT_LOCK = threading.Lock()
+_RATE_LIMIT_WINDOW = 60
+_RATE_LIMIT_MAX = 5
+
 USER_DB = {
     "token123": {"user": "nishanth", "role": "admin"},
     "token456": {"user": "guest", "role": "user"}
@@ -24,11 +29,15 @@ def attach_request_id(req):
 @app.pre_request()
 def rate_limiter(req):
     ip = req.remote_addr or "unknown"
-    RATE_LIMIT[ip] = RATE_LIMIT.get(ip, 0) + 1
-
-    if RATE_LIMIT[ip] > 5:
-        return JsonResponse({"error": "Too many requests"}, status_code=429)
-
+    now = time.time()
+    with _RATE_LIMIT_LOCK:
+        entry = RATE_LIMIT.get(ip)
+        if entry is None or now - entry["start"] > _RATE_LIMIT_WINDOW:
+            RATE_LIMIT[ip] = {"count": 1, "start": now}
+        else:
+            RATE_LIMIT[ip]["count"] += 1
+        if RATE_LIMIT[ip]["count"] > _RATE_LIMIT_MAX:
+            return JsonResponse({"error": "Too many requests"}, status_code=429)
     return req
 
 
@@ -66,7 +75,7 @@ def block_secret(req):
 def attach_metadata(data):
     req, resp = data
 
-    if resp.get_resp_type() == ResponseType.JSON:
+    if resp.get_resp_type() == ResponseType.JSON and resp.get_status_code() < 400:
         payload = resp.get_obj()
         resp = JsonResponse(
             {
@@ -86,7 +95,7 @@ def attach_metadata(data):
 def wrap_response(data):
     req, resp = data
 
-    if resp.get_resp_type() == ResponseType.JSON:
+    if resp.get_resp_type() == ResponseType.JSON and resp.get_status_code() < 400:
         payload = resp.get_obj()
         resp = JsonResponse(
             {

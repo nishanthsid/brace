@@ -11,34 +11,34 @@ class HttpMethod(Enum):
 
 
 class EndpointValidator(Enum):
-    LOOK_GT = auto()
-    LOOK_COLON = auto()
-    LOOK_LT = auto()
+    LOOK_OPEN = auto()   # waiting to see <
+    LOOK_COLON = auto()  # inside <..., waiting for :
+    LOOK_CLOSE = auto()  # after :, waiting for >
 
     @staticmethod
-    def is_param(endpoint : str):
-        context = EndpointValidator.LOOK_GT
+    def is_param(endpoint: str):
+        context = EndpointValidator.LOOK_OPEN
         for i in endpoint:
             if i == "<":
-                if context == EndpointValidator.LOOK_GT:
+                if context == EndpointValidator.LOOK_OPEN:
                     context = EndpointValidator.LOOK_COLON
                 else:
                     raise InvalidEndpointException()
             elif i == ":":
                 if context == EndpointValidator.LOOK_COLON:
-                    context = EndpointValidator.LOOK_LT
+                    context = EndpointValidator.LOOK_CLOSE
                 else:
                     raise InvalidEndpointException()
             elif i == ">":
-                if context == EndpointValidator.LOOK_LT:
+                if context == EndpointValidator.LOOK_CLOSE:
                     return True
                 else:
                     raise InvalidEndpointException()
             else:
-                if context == EndpointValidator.LOOK_LT:
+                if context == EndpointValidator.LOOK_CLOSE:
                     if not i.isalnum():
                         raise InvalidEndpointException()
-        
+
         return False
 
 class EndpointQueryResult:

@@ -51,9 +51,9 @@ class Brace:
     def response_sender(method_resp, environ, start_response):
         if not isinstance(method_resp, BaseResponse):
             resp = Response(
-                method_resp,
-                content_type = "text/plain",
-                status = method_resp.get_status_code()
+                str(method_resp),
+                content_type="text/plain",
+                status=200
             )
             return resp(environ, start_response)
         response_body = method_resp.get_obj()

@@ -61,7 +61,8 @@ class UrlStorage:
                 node = Node(NodeType.STRING, MatchType.EXACT, i)
             
             val = curr.children.get(key, False)
-            curr.leaf = False
+            if curr.handler is None:
+                curr.leaf = False
             if not val:
                 curr.children[key] = node
                 curr = node
